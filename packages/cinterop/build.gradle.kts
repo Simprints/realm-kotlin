@@ -47,18 +47,6 @@ enum class BuildType(val type: String, val buildDirSuffix: String) {
     RELEASE( type ="Release", buildDirSuffix = "");
 }
 
-// CONFIGURATION is an env variable set by XCode or could be passed to the gradle task to force a certain build type
-//               * Example: to force build a release
-//               realm-kotlin/packages> CONFIGURATION=Release ./gradlew capiIosArm64
-//               * to force build a debug (default BTW) use
-//               realm-kotlin/packages> CONFIGURATION=Debug ./gradlew capiIosArm64
-//               default is 'Release'
-val buildType: BuildType = if ((System.getenv("CONFIGURATION") ?: "RELEASE").equals("Release", ignoreCase = true)) {
-    BuildType.RELEASE
-} else {
-    BuildType.DEBUG
-}
-
 
 fun checkIfBuildingNativeLibs(task: Task, action: Task.() -> Unit) {
     // Whether or not to build the underlying native Realm Libs. Generally these are only
@@ -77,47 +65,6 @@ val jvmJniPath = "src/jvmMain/resources/jni"
 fun includeBinaries(binaries: List<String>): List<String> {
     return binaries.flatMap { listOf("-include-binary", it) }
 }
-val nativeLibraryIncludesMacosUniversalRelease = includeBinaries(
-    listOf(
-        "object-store/c_api/Release/librealm-ffi-static.a",
-        "Release/librealm.a",
-        "parser/Release/librealm-parser.a",
-        "object-store/Release/librealm-object-store.a",
-    ).map { "$absoluteCorePath/build-macos_universal/src/realm/$it" }
-)
-val nativeLibraryIncludesMacosUniversalDebug = includeBinaries(
-    listOf(
-        "object-store/c_api/Debug/librealm-ffi-static-dbg.a",
-        "Debug/librealm-dbg.a",
-        "parser/Debug/librealm-parser-dbg.a",
-        "object-store/Debug/librealm-object-store-dbg.a",
-    ).map { "$absoluteCorePath/build-macos_universal-dbg/src/realm/$it" }
-)
-val releaseLibs = listOf(
-    "librealm-ffi-static.a",
-    "librealm.a",
-    "librealm-parser.a",
-    "librealm-object-store.a",
-)
-val debugLibs = listOf(
-    "librealm-ffi-static-dbg.a",
-    "librealm-dbg.a",
-    "librealm-parser-dbg.a",
-    "librealm-object-store-dbg.a",
-)
-val nativeLibraryIncludesIosArm64Debug =
-    includeBinaries(debugLibs.map { "$absoluteCorePath/build-capi_ios_Arm64-dbg/lib/$it" })
-val nativeLibraryIncludesIosArm64Release =
-    includeBinaries(releaseLibs.map { "$absoluteCorePath/build-capi_ios_Arm64/lib/$it" })
-val nativeLibraryIncludesIosSimulatorX86Debug =
-    includeBinaries(debugLibs.map { "$absoluteCorePath/build-simulator-x86_64-dbg/lib/$it" })
-val nativeLibraryIncludesIosSimulatorX86Release =
-    includeBinaries(releaseLibs.map { "$absoluteCorePath/build-simulator-x86_64/lib/$it" })
-val nativeLibraryIncludesIosSimulatorArm64Debug =
-    includeBinaries(debugLibs.map { "$absoluteCorePath/build-simulator-arm64-dbg/lib/$it" })
-val nativeLibraryIncludesIosSimulatorArm64Release =
-    includeBinaries(releaseLibs.map { "$absoluteCorePath/build-simulator-arm64/lib/$it" })
-
 @Suppress("UNUSED_VARIABLE")
 kotlin {
     jvm()
@@ -125,98 +72,6 @@ kotlin {
         // Changing this will also requires an update to the publishCIPackages task
         // in /packages/build.gradle.kts
         publishLibraryVariants("release")
-    }
-
-    // Cinterops seems sharable across architectures (x86_64/arm) with option of differentiation in
-    // the def, but not across platforms in the current target "hierarchy"
-    // (https://kotlinlang.org/docs/reference/mpp-dsl-reference.html#targets)
-    // FIXME MPP-BUILD Relative paths in def-file resolves differently dependent of task entry point.
-    //  https://youtrack.jetbrains.com/issue/KT-43439
-    iosX64 { // Shortcut for both iosArm64 and iosX64
-        compilations.getByName("main") {
-            cinterops.create("realm_wrapper") {
-                definitionFile.set(project.file("src/native/realm.def"))
-                packageName = "realm_wrapper"
-                includeDirs("$absoluteCorePath/src/")
-            }
-            // Relative paths in def file depends are resolved differently dependent on execution
-            // location
-            // https://youtrack.jetbrains.com/issue/KT-43439
-            // https://github.com/JetBrains/kotlin-native/issues/2314
-            // ... and def file does not support using environment variables
-            // https://github.com/JetBrains/kotlin-native/issues/3631
-            // so resolving paths through gradle
-            kotlinOptions.freeCompilerArgs += when (buildType) {
-                BuildType.DEBUG -> nativeLibraryIncludesIosSimulatorX86Debug
-                BuildType.RELEASE -> nativeLibraryIncludesIosSimulatorX86Release
-            }
-        }
-    }
-    iosSimulatorArm64 {
-        compilations.getByName("main") {
-            cinterops.create("realm_wrapper") {
-                definitionFile.set(project.file("src/native/realm.def"))
-                packageName = "realm_wrapper"
-                includeDirs("$absoluteCorePath/src/")
-            }
-            kotlinOptions.freeCompilerArgs += when (buildType) {
-                BuildType.DEBUG -> nativeLibraryIncludesIosSimulatorArm64Debug
-                BuildType.RELEASE -> nativeLibraryIncludesIosSimulatorArm64Release
-            }
-        }
-    }
-    iosArm64 {
-        compilations.getByName("main") {
-            cinterops.create("realm_wrapper") {
-                definitionFile.set(project.file("src/native/realm.def"))
-                packageName = "realm_wrapper"
-                includeDirs("$absoluteCorePath/src/")
-            }
-            // Relative paths in def file depends are resolved differently dependent on execution
-            // location
-            // https://youtrack.jetbrains.com/issue/KT-43439
-            // https://github.com/JetBrains/kotlin-native/issues/2314
-            // ... and def file does not support using environment variables
-            // https://github.com/JetBrains/kotlin-native/issues/3631
-            // so resolving paths through gradle
-            kotlinOptions.freeCompilerArgs += when (buildType) {
-                BuildType.DEBUG -> nativeLibraryIncludesIosArm64Debug
-                BuildType.RELEASE -> nativeLibraryIncludesIosArm64Release
-            }
-        }
-    }
-    macosX64 {
-        compilations.getByName("main") {
-            cinterops.create("realm_wrapper") {
-                definitionFile.set(project.file("src/native/realm.def"))
-                packageName = "realm_wrapper"
-                includeDirs("$absoluteCorePath/src/")
-            }
-            // Relative paths in def file depends are resolved differently dependent on execution
-            // location
-            // https://youtrack.jetbrains.com/issue/KT-43439
-            // https://github.com/JetBrains/kotlin-native/issues/2314
-            // ... and def file does not support using environment variables
-            // https://github.com/JetBrains/kotlin-native/issues/3631
-            // so resolving paths through gradle
-            kotlinOptions.freeCompilerArgs += when(buildType) {
-                BuildType.DEBUG -> nativeLibraryIncludesMacosUniversalDebug
-                BuildType.RELEASE -> nativeLibraryIncludesMacosUniversalRelease
-            }
-        }
-    }
-    macosArm64 {
-        compilations.getByName("main") {
-            cinterops.create("realm_wrapper") {
-                definitionFile.set(project.file("src/native/realm.def"))
-                packageName = "realm_wrapper"
-                includeDirs("$absoluteCorePath/src/")
-            }
-            kotlinOptions.freeCompilerArgs += when(buildType) {
-                BuildType.DEBUG -> nativeLibraryIncludesMacosUniversalDebug
-                BuildType.RELEASE -> nativeLibraryIncludesMacosUniversalRelease
-            }
-        }
     }
 
     sourceSets {
@@ -256,42 +111,7 @@ kotlin {
                 implementation("androidx.test:rules:${Versions.androidxTest}")
             }
         }
-        val nativeDarwin by creating {
-            dependsOn(commonMain)
-        }
-        val nativeDarwinTest by creating {
-            dependsOn(commonTest)
-        }
-        val iosArm64Main by getting {
-            dependsOn(nativeDarwin)
-        }
-        val iosArm64Test by getting {
-            dependsOn(nativeDarwinTest)
-        }
-        val iosX64Main by getting {
-            dependsOn(nativeDarwin)
-        }
-        val iosX64Test by getting {
-            dependsOn(nativeDarwinTest)
-        }
-        val iosSimulatorArm64Main by getting {
-            dependsOn(nativeDarwin)
-        }
-        val iosSimulatorArm64Test by getting {
-            dependsOn(nativeDarwinTest)
-        }
-        val macosX64Main by getting {
-            dependsOn(nativeDarwin)
-        }
-        val macosArm64Main by getting {
-            dependsOn(nativeDarwin)
-        }
-        val macosX64Test by getting {
-            dependsOn(nativeDarwinTest)
-        }
-        val macosArm64Test by getting {
-            dependsOn(nativeDarwinTest)
-        }
+
     }
 }
 
@@ -361,58 +181,6 @@ android {
     compileOptions {
         sourceCompatibility = Versions.sourceCompatibilityVersion
         targetCompatibility = Versions.targetCompatibilityVersion
-    }
-}
-
-// Building Mach-O universal binary with 2 architectures: [x86_64] [arm64] (Apple M1) for macOS
-if (HOST_OS.isMacOs()) {
-    val capiMacosUniversal by tasks.registering {
-        build_C_API_Macos_Universal(buildVariant = buildType)
-    }
-
-    // Building Simulator binaries for iosX64 (x86_64) and iosSimulatorArm64 (i.e Apple silicon arm64)
-    val capiSimulatorX64 by tasks.registering {
-        build_C_API_Simulator("x86_64", buildType)
-    }
-
-    // Building Simulator binaries for iosSimulatorArm64 (i.e Apple silicon arm64)
-    val capiSimulatorArm64 by tasks.registering {
-        build_C_API_Simulator("arm64", buildType)
-    }
-
-    // Building for ios device (arm64 only)
-    val capiIosArm64 by tasks.registering {
-        build_C_API_iOS_Arm64(buildType)
-    }
-
-    tasks.named("cinteropRealm_wrapperIosArm64") {
-        checkIfBuildingNativeLibs(this) {
-            dependsOn(capiIosArm64)
-        }
-    }
-
-    tasks.named("cinteropRealm_wrapperIosX64") {
-        checkIfBuildingNativeLibs(this) {
-            dependsOn(capiSimulatorX64)
-        }
-    }
-
-    tasks.named("cinteropRealm_wrapperIosSimulatorArm64") {
-        checkIfBuildingNativeLibs(this) {
-            dependsOn(capiSimulatorArm64)
-        }
-    }
-
-    tasks.named("cinteropRealm_wrapperMacosX64") {
-        checkIfBuildingNativeLibs(this) {
-            dependsOn(capiMacosUniversal)
-        }
-    }
-
-    tasks.named("cinteropRealm_wrapperMacosArm64") {
-        checkIfBuildingNativeLibs(this) {
-            dependsOn(capiMacosUniversal)
-        }
     }
 }
 
@@ -567,135 +335,6 @@ fun Task.buildSharedLibrariesForJVMWindows() {
     inputs.dir(project.file("$absoluteCorePath/src"))
     outputs.file(project.file("$jvmJniPath/windows/realmc.dll"))
 }
-
-fun Task.build_C_API_Macos_Universal(buildVariant: BuildType) {
-    val directory = "$absoluteCorePath/build-macos_universal${buildVariant.buildDirSuffix}"
-    doLast {
-        exec {
-            commandLine("mkdir", "-p", directory)
-        }
-        exec {
-            // See https://github.com/realm/realm-core/blob/master/tools/build-cocoa.sh#L47
-            // for source of these arguments.
-            workingDir(project.file(directory))
-            commandLine(
-                "cmake",
-                *getSharedCMakeFlags(buildVariant),
-                "-DCMAKE_TOOLCHAIN_FILE=$absoluteCorePath/tools/cmake/xcode.toolchain.cmake",
-                "-DCMAKE_SYSTEM_NAME=Darwin",
-                "-DCPACK_SYSTEM_NAME=macosx",
-                "-DCPACK_PACKAGE_DIRECTORY=..",
-                "-DCMAKE_OSX_ARCHITECTURES=x86_64;arm64",
-                "-G",
-                "Xcode",
-                ".."
-            )
-        }
-        exec {
-            workingDir(project.file(directory))
-            commandLine(
-                "xcodebuild",
-                "-destination",
-                "generic/platform=macOS",
-                "-sdk",
-                "macosx",
-                "-configuration",
-                "${buildVariant.type}",
-                "-UseModernBuildSystem=NO", // TODO remove flag when https://github.com/realm/realm-kotlin/issues/141 is fixed
-                "DISABLE_MANUAL_TARGET_ORDER_BUILD_WARNING=YES",
-            )
-        }
-    }
-    inputs.dir(project.file("$absoluteCorePath/src"))
-    outputs.file(project.file("$directory/src/realm/object-store/c_api/$buildVariant/librealm-ffi-static.a"))
-    outputs.file(project.file("$directory/src/realm/$buildVariant/librealm.a"))
-    outputs.file(project.file("$directory/src/realm/object-store/c_api/$buildVariant/librealm-ffi-static.a"))
-    outputs.file(project.file("$directory/src/realm/object-store/$buildVariant/librealm-object-store.a"))
-}
-
-fun Task.build_C_API_Simulator(arch: String, buildType: BuildType) {
-    val directory = "$absoluteCorePath/build-simulator-$arch${buildType.buildDirSuffix}"
-    doLast {
-        exec {
-            workingDir(project.file(absoluteCorePath))
-            commandLine("mkdir", "-p", directory)
-        }
-        exec {
-            workingDir(project.file(directory))
-            commandLine(
-                "cmake", "-DCMAKE_TOOLCHAIN_FILE=$absoluteCorePath/tools/cmake/xcode.toolchain.cmake",
-                *getSharedCMakeFlags(buildType),
-                "-DCMAKE_INSTALL_PREFIX=.",
-                "-G",
-                "Xcode",
-                ".."
-            )
-        }
-        exec {
-            workingDir(project.file(directory))
-            commandLine(
-                "xcodebuild",
-                "ARCHS=$arch",
-                "-sdk",
-                "iphonesimulator",
-                "-configuration",
-                buildType.type,
-                "-target",
-                "install",
-                "-UseModernBuildSystem=NO", // TODO remove flag when https://github.com/realm/realm-kotlin/issues/141 is fixed
-                "DISABLE_MANUAL_TARGET_ORDER_BUILD_WARNING=YES",
-            )
-        }
-    }
-    inputs.dir(project.file("$absoluteCorePath/src"))
-    outputs.file(project.file("$directory/lib/librealm-ffi-static${buildType.buildDirSuffix}.a"))
-    outputs.file(project.file("$directory/lib/librealm${buildType.buildDirSuffix}.a"))
-    outputs.file(project.file("$directory/lib/librealm-parser${buildType.buildDirSuffix}.a"))
-    outputs.file(project.file("$directory/lib/librealm-object-store${buildType.buildDirSuffix}.a"))
-}
-
-fun Task.build_C_API_iOS_Arm64(buildType: BuildType) {
-    val directory = "$absoluteCorePath/build-capi_ios_Arm64${buildType.buildDirSuffix}"
-    doLast {
-        exec {
-            commandLine("mkdir", "-p", directory)
-        }
-        exec {
-            workingDir(project.file(directory))
-            commandLine(
-                "cmake", "-DCMAKE_TOOLCHAIN_FILE=$absoluteCorePath/tools/cmake/xcode.toolchain.cmake",
-                *getSharedCMakeFlags(buildType),
-                "-DCMAKE_INSTALL_PREFIX=.",
-                "-G",
-                "Xcode",
-                ".."
-            )
-        }
-        exec {
-            workingDir(project.file(directory))
-            commandLine(
-                "xcodebuild",
-                "-sdk",
-                "iphoneos",
-                "-configuration",
-                buildType.type,
-                "-target",
-                "install",
-                "-arch",
-                "arm64",
-                "ONLY_ACTIVE_ARCH=NO",
-                "-UseModernBuildSystem=NO",
-                "DISABLE_MANUAL_TARGET_ORDER_BUILD_WARNING=YES",
-            )
-        }
-    }
-    inputs.dir(project.file("$absoluteCorePath/src"))
-    outputs.file(project.file("$directory/lib/librealm-ffi-static${buildType.buildDirSuffix}.a"))
-    outputs.file(project.file("$directory/lib/librealm${buildType.buildDirSuffix}.a"))
-    outputs.file(project.file("$directory/lib/librealm-parser${buildType.buildDirSuffix}.a"))
-    outputs.file(project.file("$directory/lib/librealm-object-store${buildType.buildDirSuffix}.a"))
-}
-
 afterEvaluate {
     // Ensure that Swig wrapper is generated before compiling the JNI layer. This task needs
     // the cpp file as it somehow processes the CMakeList.txt-file, but haven't dug up the
@@ -722,17 +361,6 @@ tasks.named("jvmProcessResources") {
     dependsOn(copyJVMSharedLibs)
 }
 
-// Add generic macosTest task that execute macos tests according to the current host architecture
-if (HOST_OS.isMacOs()) {
-    tasks.register("macosTest") {
-        val arch = when (HOST_OS) {
-            OperatingSystem.MACOS_ARM64 -> "Arm64"
-            OperatingSystem.MACOS_X64 -> "X64"
-            else -> throw IllegalStateException("Unsupported macOS architecture: $HOST_OS")
-        }
-        dependsOn(tasks.named("macos${arch}Test"))
-    }
-}
 
 // Maven Central requires JavaDoc so add empty javadoc artifacts
 val javadocJar by tasks.registering(Jar::class) {

@@ -47,11 +47,6 @@ kotlin {
         // in /packages/build.gradle.kts
         publishLibraryVariants("release")
     }
-    iosX64()
-    iosSimulatorArm64()
-    iosArm64()
-    macosX64()
-    macosArm64()
 
     sourceSets {
         val commonMain by getting {
@@ -89,30 +84,10 @@ kotlin {
                 implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:${Versions.coroutines}")
             }
         }
-        val nativeDarwin by creating {
-            dependsOn(commonMain)
-        }
-        val nativeMacos by creating {
-            dependsOn(nativeDarwin)
-        }
-        val nativeIos by creating {
-            dependsOn(nativeDarwin)
-        }
-        val macosX64Main by getting {
-            dependsOn(nativeMacos)
-        }
-        val macosArm64Main by getting {
-            dependsOn(nativeMacos)
-        }
-        val iosArm64Main by getting {
-            dependsOn(nativeIos)
-        }
-        val iosSimulatorArm64Main by getting {
-            dependsOn(nativeIos)
-        }
-        val iosX64Main by getting {
-            dependsOn(nativeIos)
-        }
+
+
+
+
     }
 
     // Require that all methods in the API have visibility modifiers and return types.

@@ -57,11 +57,7 @@ tasks.register("publishCIPackages") {
 
     // Figure out which targets are configured. This will impact which sub modules will be published
     val availableTargets = setOf(
-        "iosArm64",
-        "iosX64",
         "jvm",
-        "macosX64",
-        "macosArm64",
         "android",
         "metadata",
         "compilerPlugin",
@@ -96,20 +92,8 @@ tasks.register("publishCIPackages") {
 
     publicationTargets.forEach { target: String ->
         when(target) {
-            "iosArm64" -> {
-                dependsOn(
-                    ":cinterop:publishIosArm64PublicationToTestRepository",
-                    ":cinterop:publishIosSimulatorArm64PublicationToTestRepository",
-                    ":library-base:publishIosArm64PublicationToTestRepository",
-                    ":library-base:publishIosSimulatorArm64PublicationToTestRepository",
-                )
-            }
-            "iosX64" -> {
-                dependsOn(
-                    ":cinterop:publishIosX64PublicationToTestRepository",
-                    ":library-base:publishIosX64PublicationToTestRepository",
-                )
-            }
+
+
             "jvm" -> {
                 dependsOn(
                     ":jni-swig-stub:publishAllPublicationsToTestRepository",
@@ -117,18 +101,8 @@ tasks.register("publishCIPackages") {
                     ":library-base:publishJvmPublicationToTestRepository",
                 )
             }
-            "macosX64" -> {
-                dependsOn(
-                    ":cinterop:publishMacosX64PublicationToTestRepository",
-                    ":library-base:publishMacosX64PublicationToTestRepository",
-                )
-            }
-            "macosArm64" -> {
-                dependsOn(
-                    ":cinterop:publishMacosArm64PublicationToTestRepository",
-                    ":library-base:publishMacosArm64PublicationToTestRepository",
-                )
-            }
+
+
             "android" -> {
                 dependsOn(
                     ":jni-swig-stub:publishAllPublicationsToTestRepository",
