@@ -32,44 +32,12 @@ plugins {
 // Test relies on the compiler plugin, but we cannot apply our full plugin from within the same
 // gradle run, so we just apply the compiler plugin directly
 dependencies {
-    kotlinCompilerPluginClasspath("io.realm.kotlin:plugin-compiler:${Realm.version}")
-    kotlinNativeCompilerPluginClasspath("io.realm.kotlin:plugin-compiler-shaded:${Realm.version}")
+    kotlinCompilerPluginClasspath(project(":plugin-compiler"))
+    kotlinNativeCompilerPluginClasspath(project(":plugin-compiler-shaded"))
     kotlinCompilerClasspath("org.jetbrains.kotlin:kotlin-compiler-embeddable:${Versions.kotlin}")
     kotlinCompilerClasspath("org.jetbrains.kotlin:kotlin-scripting-compiler-embeddable:${Versions.kotlin}")
 }
 
-// Substitute maven coordinate dependencies of pattern 'io.realm.kotlin:<name>:${Realm.version}'
-// with project dependency ':<name>' if '<name>' is configured as a subproject of the root project
-configurations.all {
-    resolutionStrategy.dependencySubstitution {
-        rootProject.allprojects
-            .filter { it != project && it != rootProject }
-            .forEach { subproject: Project ->
-                substitute(module("io.realm.kotlin:${subproject.name}:${Realm.version}")).using(
-                    project(":${subproject.name}")
-                )
-            }
-    }
-
-    // Ensure that androidUnitTest uses the Realm JVM variant rather than Android.
-    // This should cover both "debug" and "release" variants.
-    //
-    // WARNING: This does not work unless jvm artifacts has been published which also means
-    // that Android JVM tests will not pickup changes to the library unless they are manually
-    // published using `publishAllPublicationsToTestRepository`.
-    //
-    // See https://github.com/realm/realm-kotlin/issues/1404 for more details.
-    if (name.endsWith("UnitTestRuntimeClasspath")) {
-        resolutionStrategy.dependencySubstitution {
-            substitute(module("io.realm.kotlin:library-base:${Realm.version}")).using(
-                module("io.realm.kotlin:library-base-jvm:${Realm.version}")
-            )
-            substitute(module("io.realm.kotlin:cinterop:${Realm.version}")).using(
-                module("io.realm.kotlin:cinterop-jvm:${Realm.version}")
-            )
-        }
-    }
-}
 
 // Common Kotlin configuration
 @Suppress("UNUSED_VARIABLE")
@@ -81,17 +49,17 @@ kotlin {
                 implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:${Versions.coroutines}")
                 // FIXME AUTO-SETUP Removed automatic dependency injection to ensure observability of
                 //  requirements for now
-                implementation("io.realm.kotlin:library-base:${Realm.version}")
+                implementation(project(":library-base"))
                 // FIXME API-SCHEMA We currently have some tests that verified injection of
                 //  interfaces, uses internal representation for property meta data, etc. Can
                 //  probably be replaced when schema information is exposed in the public API
                 // Our current compiler plugin tests only runs on JVM, so makes sense to keep them
                 // for now, but ideally they should go to the compiler plugin tests.
-                implementation("io.realm.kotlin:cinterop:${Realm.version}")
-                implementation("org.jetbrains.kotlinx:atomicfu:${Versions.atomicfu}")
+                implementation("io.realm.kotlin:cinterop:${Realm.nativeRealmVersion}")
+                implementation("org.jetbrains.kotlinx:atomicfu:${Versions.atomicfuPlugin}")
                 implementation("com.squareup.okio:okio:${Versions.okio}")
                 implementation("org.jetbrains.kotlinx:kotlinx-datetime:${Versions.datetime}")
-                implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:${Versions.serialization}")
+                implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:${Versions.serializationJson}")
             }
         }
 
@@ -114,8 +82,6 @@ kotlin {
 android {
     namespace = "io.realm.testapp"
     compileSdk = Versions.Android.compileSdkVersion
-    buildToolsVersion = Versions.Android.buildToolsVersion
-
     defaultConfig {
         minSdk = Versions.Android.minSdk
         targetSdk = Versions.Android.targetSdk
@@ -229,7 +195,7 @@ kotlin {
     sourceSets {
         val jvmMain by getting {
             dependencies {
-                implementation("io.realm.kotlin:plugin-compiler:${Realm.version}")
+                implementation(project(":plugin-compiler"))
                 implementation("org.jetbrains.kotlin:kotlin-compiler-embeddable:${Versions.kotlin}")
                 implementation("dev.zacsweers.kctfork:core:${Versions.kotlinCompileTesting}")
             }
@@ -242,70 +208,9 @@ kotlin {
         }
     }
 }
-@Suppress("UNUSED_VARIABLE")
-kotlin {
-    if (HOST_OS == OperatingSystem.MACOS_ARM64) {
-        iosSimulatorArm64("ios")
-        macosArm64("macos")
-    } else if (HOST_OS == OperatingSystem.MACOS_X64) {
-        iosX64("ios")
-        macosX64("macos")
-    }
-    targets.filterIsInstance<KotlinNativeTargetWithSimulatorTests>().forEach { simulatorTargets ->
-        simulatorTargets.testRuns.forEach { testRun ->
-            testRun.deviceId = project.findProperty("iosDevice")?.toString() ?: "iPhone 14"
-        }
-    }
-    sourceSets {
-        val commonMain by getting
-        val commonTest by getting
-        if (HOST_OS.isMacOs()) {
-            val nativeDarwin by creating {
-                dependsOn(commonMain)
-            }
-            val nativeDarwinTest by creating {
-                dependsOn(commonTest)
-                // We cannot include this as it will generate duplicates
-                // e: java.lang.IllegalStateException: IrPropertyPublicSymbolImpl for io.realm.kotlin.test.mongodb.util/TEST_METHODS|-1310682179529671403[0] is already bound: PROPERTY name:TEST_METHODS visibility:public modality:FINAL [val]
-                // dependsOn(nativeDarwin)
-            }
-            val macosMain by getting { dependsOn(nativeDarwin) }
-            val macosTest by getting { dependsOn(nativeDarwinTest) }
-            val iosMain by getting { dependsOn(nativeDarwin) }
-            val iosTest by getting { dependsOn(nativeDarwinTest) }
-        }
-    }
-}
 
 tasks.withType<KotlinCompilationTask<*>>().configureEach {
     compilerOptions {
         freeCompilerArgs.add("-Xexpect-actual-classes")
-    }
-}
-
-tasks.withType<KotlinNativeCompile>().configureEach {
-    compilerOptions {
-        freeCompilerArgs.add("-opt-in=kotlinx.cinterop.ExperimentalForeignApi")
-    }
-}
-
-// Rules for getting Kotlin Native resource test files in place for locating it with the `assetFile`
-// configuration. For JVM platforms the files are placed in
-// `src/jvmTest/resources`(non-Android JVM) and `src/androidTest/assets` (Android).
-if (HOST_OS.isMacOs()) {
-    kotlin {
-        targets.filterIsInstance<org.jetbrains.kotlin.gradle.plugin.mpp.KotlinNativeTargetWithTests<*>>().forEach { simulatorTargets ->
-            val target = simulatorTargets.name
-            val testTaskName = "${target}Test"
-            val testTask = tasks.findByName(testTaskName) ?: error("Cannot locate test task: '$testTaskName")
-            val copyTask = tasks.register<Copy>("${target}TestResources") {
-                from("src/${testTaskName}/resources")
-                val parent = testTask.inputs.files.first().parent
-                into(parent)
-            }
-            testTask.let {
-                it.dependsOn(copyTask)
-            }
-        }
     }
 }

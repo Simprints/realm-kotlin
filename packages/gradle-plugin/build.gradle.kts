@@ -13,8 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import org.yaml.snakeyaml.Yaml
-import java.io.FileInputStream
 
 plugins {
     kotlin("jvm")
@@ -60,7 +58,7 @@ gradlePlugin {
     plugins {
         create("RealmPlugin") {
             id = Realm.pluginPortalId
-            displayName = "Realm Kotlin Plugin"
+            displayName = "Realm Simprints Kotlin Plugin"
             description = "Gradle plugin for the Realm Kotlin SDK, supporting Android and Multiplatform. " +
                 "Realm is a mobile database: Build better apps faster."
             implementationClass = "io.realm.kotlin.gradle.RealmPlugin"
@@ -102,18 +100,10 @@ sourceSets {
 
 // Task to generate gradle plugin runtime constants for SDK and core versions
 val versionConstants: Task = tasks.create("versionConstants") {
-    val coreDependenciesFile = layout.projectDirectory.file(
-        listOf("..", "external", "core", "dependencies.yml").joinToString(File.separator)
-    )
-    inputs.file(coreDependenciesFile)
-    inputs.property("version", project.version)
+
     val outputDir = file(versionDirectory)
     outputs.dir(outputDir)
-
-    val yaml = Yaml()
-    val coreDependencies: Map<String, String> = yaml.load(FileInputStream(coreDependenciesFile.asFile))
-    val coreVersion = coreDependencies["VERSION"]
-
+    val coreVersion = "14.12.0" // the current version of the realm core library https://github.com/realm/realm-core
     doLast {
         val versionFile = file("$outputDir/io/realm/kotlin/gradle/version.kt")
         versionFile.parentFile.mkdirs()
@@ -122,7 +112,7 @@ val versionConstants: Task = tasks.create("versionConstants") {
             // Generated file. Do not edit!
             package io.realm.kotlin.gradle
             internal const val PLUGIN_VERSION = "${project.version}"
-            internal const val CORE_VERSION = "${coreVersion}"
+            internal const val CORE_VERSION = "$coreVersion"
             """.trimIndent()
         )
     }
