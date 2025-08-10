@@ -37,10 +37,6 @@ dependencies {
 
 val mavenPublicationName = "gradlePlugin"
 
-fun createMarkerArtifact(): Boolean {
-    val value = properties.getOrDefault("generatePluginArtifactMarker", "false") as String
-    return value.toBoolean()
-}
 
 pluginBundle {
     website = "https://github.com/realm/realm-kotlin"
@@ -63,7 +59,7 @@ gradlePlugin {
                 "Realm is a mobile database: Build better apps faster."
             implementationClass = "io.realm.kotlin.gradle.RealmPlugin"
         }
-        isAutomatedPublishing = createMarkerArtifact()
+        isAutomatedPublishing = true
     }
 }
 
