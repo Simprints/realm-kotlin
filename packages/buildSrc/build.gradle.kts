@@ -54,7 +54,6 @@ dependencies {
     implementation("io.github.gradle-nexus:publish-plugin:${Versions.nexusPublishPlugin}")
     implementation("io.gitlab.arturbosch.detekt:detekt-gradle-plugin:${Versions.detektPlugin}")
     implementation("org.jetbrains.kotlin:kotlin-gradle-plugin:${Versions.kotlin}")
-    implementation("com.android.tools:r8:${Versions.Android.r8}")
     implementation("com.android.tools.build:gradle:${Versions.Android.buildTools}")
     implementation(kotlin("script-runtime"))
 }
