@@ -54,7 +54,7 @@ gradlePlugin {
     plugins {
         create("RealmPlugin") {
             id = Realm.pluginPortalId
-            displayName = "Realm Simprints Kotlin Plugin"
+            displayName = "Realm Kotlin Plugin"
             description = "Gradle plugin for the Realm Kotlin SDK, supporting Android and Multiplatform. " +
                 "Realm is a mobile database: Build better apps faster."
             implementationClass = "io.realm.kotlin.gradle.RealmPlugin"
