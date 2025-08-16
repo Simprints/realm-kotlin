@@ -18,7 +18,7 @@ plugins {
     kotlin("jvm")
     `java-gradle-plugin`
     id("com.gradle.plugin-publish") version Versions.gradlePluginPublishPlugin
-    id("realm-publisher")
+    id("com.vanniktech.maven.publish")
 }
 
 buildscript {
@@ -36,7 +36,6 @@ dependencies {
 }
 
 val mavenPublicationName = "gradlePlugin"
-
 
 pluginBundle {
     website = "https://github.com/realm/realm-kotlin"
@@ -63,18 +62,33 @@ gradlePlugin {
     }
 }
 
-realmPublish {
-    pom {
-        name = "Gradle Plugin"
-        description = "Gradle plugin for Realm Kotlin. Realm is a mobile database: Build better apps faster."
-    }
-}
+mavenPublishing {
+    coordinates(Realm.group, Realm.gradlePluginId, Realm.version)
 
-publishing {
-    publications {
-        register<MavenPublication>(mavenPublicationName) {
-            artifactId = Realm.gradlePluginId
-            from(components["java"])
+    pom {
+        name.set("Gradle Plugin")
+        description.set(
+            "Gradle plugin for Realm Kotlin. Realm is a mobile database: Build better apps faster."
+        )
+        url.set(Realm.projectUrl)
+        licenses {
+            license {
+                name.set(Realm.License.name)
+                url.set(Realm.License.url)
+                distribution.set(Realm.License.distribution)
+            }
+        }
+        developers {
+            developer {
+                id.set(Realm.Developer.name)
+                name.set(Realm.Developer.name)
+                url.set(Realm.Developer.organizationUrl)
+            }
+        }
+        scm {
+            url.set(Realm.SCM.url)
+            connection.set(Realm.SCM.connection)
+            developerConnection.set(Realm.SCM.developerConnection)
         }
     }
 }

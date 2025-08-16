@@ -19,7 +19,7 @@ import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 plugins {
     `java`
     id("com.github.johnrengelman.shadow") version Versions.shadowJar
-    id("realm-publisher")
+    id("com.vanniktech.maven.publish")
 }
 
 dependencies {
@@ -27,7 +27,6 @@ dependencies {
 }
 
 val mavenPublicationName = "compilerPluginShaded"
-
 tasks {
     named<ShadowJar>("shadowJar") {
         archiveClassifier.set("")
@@ -42,30 +41,42 @@ tasks {
         )
     }
 }
-
-realmPublish {
-    pom {
-        name = "Shaded Compiler Plugin"
-        description = "Shaded compiler plugin for native platforms for Realm Kotlin. This artifact is not " +
-                "supposed to be consumed directly, but through " +
-                "'io.realm.kotlin:gradle-plugin:${Realm.version}' instead."
-    }
-}
-
 java {
     withSourcesJar()
-    withJavadocJar()
+    // withJavadocJar() optional, remove if you don't want javadoc
     sourceCompatibility = Versions.sourceCompatibilityVersion
     targetCompatibility = Versions.targetCompatibilityVersion
 }
 
-publishing {
-    publications {
-        register<MavenPublication>(mavenPublicationName) {
-            artifactId = Realm.compilerPluginIdNative
-            project.shadow.component(this)
-            artifact(tasks.named("sourcesJar"))
-            artifact(tasks.named("javadocJar"))
+mavenPublishing {
+    coordinates(Realm.group, Realm.compilerPluginIdNative, Realm.version)
+
+    pom {
+        name.set("Shaded Compiler Plugin")
+        description.set(
+            "Shaded compiler plugin for native platforms for Realm Kotlin. " +
+                    "This artifact is not supposed to be consumed directly, but through " +
+                    "'io.realm.kotlin:gradle-plugin:${Realm.version}' instead."
+        )
+        url.set(Realm.projectUrl)
+        licenses {
+            license {
+                name.set(Realm.License.name)
+                url.set(Realm.License.url)
+                distribution.set(Realm.License.distribution)
+            }
+        }
+        developers {
+            developer {
+                id.set(Realm.Developer.name)
+                name.set(Realm.Developer.name)
+                url.set(Realm.Developer.organizationUrl)
+            }
+        }
+        scm {
+            url.set(Realm.SCM.url)
+            connection.set(Realm.SCM.connection)
+            developerConnection.set(Realm.SCM.developerConnection)
         }
     }
 }

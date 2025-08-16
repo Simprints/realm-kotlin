@@ -17,7 +17,7 @@
 plugins {
     kotlin("jvm")
     kotlin("kapt")
-    id("realm-publisher")
+    id("com.vanniktech.maven.publish")
 }
 
 val mavenPublicationName = "compilerPlugin"
@@ -48,27 +48,41 @@ tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
     compilerOptions.freeCompilerArgs.add("-Xjvm-default=all-compatibility")
 }
 
-realmPublish {
-    pom {
-        name = "Compiler Plugin"
-        description = "Compiler plugin for JVM based platforms for Realm Kotlin. This artifact is not " +
-            "supposed to be consumed directly, but through " +
-            "'io.realm.kotlin:gradle-plugin:${Realm.version}' instead."
-    }
-}
+mavenPublishing {
+    coordinates(Realm.group, Realm.compilerPluginId, Realm.version)
 
-publishing {
-    publications {
-        register<MavenPublication>(mavenPublicationName) {
-            artifactId = Realm.compilerPluginId
-            from(components["java"])
+    pom {
+        name.set("Compiler Plugin")
+        description.set(
+            "Compiler plugin for JVM based platforms for Realm Kotlin. " +
+                    "This artifact is not supposed to be consumed directly, but through " +
+                    "'io.realm.kotlin:gradle-plugin:${Realm.version}' instead."
+        )
+        url.set(Realm.projectUrl)
+        licenses {
+            license {
+                name.set(Realm.License.name)
+                url.set(Realm.License.url)
+                distribution.set(Realm.License.distribution)
+            }
+        }
+        developers {
+            developer {
+                id.set(Realm.Developer.name)
+                name.set(Realm.Developer.name)
+                url.set(Realm.Developer.organizationUrl)
+            }
+        }
+        scm {
+            url.set(Realm.SCM.url)
+            connection.set(Realm.SCM.connection)
+            developerConnection.set(Realm.SCM.developerConnection)
         }
     }
 }
 
 java {
     withSourcesJar()
-    withJavadocJar()
     sourceCompatibility = Versions.sourceCompatibilityVersion
     targetCompatibility = Versions.targetCompatibilityVersion
 }

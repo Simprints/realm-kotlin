@@ -13,14 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import io.realm.kotlin.getPropertyValue
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
     id("com.android.library") apply false
+    id("com.vanniktech.maven.publish") version "0.34.0"
+    id ("signing")
     id("realm-lint")
     `java-gradle-plugin`
-    id("realm-publisher")
 }
 
 allprojects {
@@ -31,6 +31,35 @@ allprojects {
     tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinJvmCompile> {
         compilerOptions {
             jvmTarget.set(JvmTarget.fromTarget(Versions.kotlinJvmTarget))
+        }
+    }
+}
+
+mavenPublishing {
+    pom {
+        name.set("Realm Kotlin")
+        description.set(
+            "Realm Kotlin is a library and tools to work with the Realm Database in Kotlin applications. "
+        )
+        url.set(Realm.projectUrl)
+        licenses {
+            license {
+                name.set(Realm.License.name)
+                url.set(Realm.License.url)
+                distribution.set(Realm.License.distribution)
+            }
+        }
+        developers {
+            developer {
+                id.set(Realm.Developer.name)
+                name.set(Realm.Developer.name)
+                url.set(Realm.Developer.organizationUrl)
+            }
+        }
+        scm {
+            url.set(Realm.SCM.url)
+            connection.set(Realm.SCM.connection)
+            developerConnection.set(Realm.SCM.developerConnection)
         }
     }
 }

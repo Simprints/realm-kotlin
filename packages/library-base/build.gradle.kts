@@ -21,9 +21,9 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinNativeCompile
 plugins {
     id("org.jetbrains.kotlin.multiplatform")
     id("com.android.library")
-    id("realm-publisher")
     kotlin("plugin.serialization") version Versions.kotlin
     id("org.jetbrains.kotlinx.atomicfu") version Versions.atomicfuPlugin
+    id("com.vanniktech.maven.publish")
 }
 
 // AtomicFu cannot transform JVM code. Maybe an issue with using IR backend. Throws
@@ -140,11 +140,37 @@ android {
     }
 }
 
-realmPublish {
+
+
+mavenPublishing {
+    coordinates(Realm.group, Realm.libraryBaseId, Realm.version)
+
     pom {
-        name = "Library"
-        description = "Library code for Realm Kotlin. This artifact is not " +
-            "supposed to be consumed directly, but through " +
-            "'io.realm.kotlin:gradle-plugin:${Realm.version}' instead."
+        name.set("Base Library")
+        description.set(
+            "Library code for Realm Kotlin. This artifact is not " +
+                    "supposed to be consumed directly, but through " +
+                    "'io.realm.kotlin:gradle-plugin:${Realm.version}' instead."
+        )
+        url.set(Realm.projectUrl)
+        licenses {
+            license {
+                name.set(Realm.License.name)
+                url.set(Realm.License.url)
+                distribution.set(Realm.License.distribution)
+            }
+        }
+        developers {
+            developer {
+                id.set(Realm.Developer.name)
+                name.set(Realm.Developer.name)
+                url.set(Realm.Developer.organizationUrl)
+            }
+        }
+        scm {
+            url.set(Realm.SCM.url)
+            connection.set(Realm.SCM.connection)
+            developerConnection.set(Realm.SCM.developerConnection)
+        }
     }
 }

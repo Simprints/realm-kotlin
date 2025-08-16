@@ -20,15 +20,6 @@ plugins {
     `kotlin-dsl-precompiled-script-plugins`
 }
 
-gradlePlugin {
-    plugins {
-        register("realm-publisher") {
-            id = "realm-publisher"
-            implementationClass = "io.realm.kotlin.RealmPublishPlugin"
-        }
-    }
-}
-
 java {
     sourceCompatibility = Versions.sourceCompatibilityVersion
     targetCompatibility = Versions.targetCompatibilityVersion

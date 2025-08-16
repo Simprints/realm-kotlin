@@ -66,7 +66,7 @@ object Realm {
     // The version of the native realm binaries to avoid rebuilding them
     const val nativeRealmVersion = "3.0.0"
     const val group = "com.simprints.realm.kotlin"
-    const val projectUrl = "https://realm.io"
+    const val projectUrl = "https://github.com/Simprints/realm-kotlin/"
     const val pluginPortalId = "com.simprints.realm.kotlin"
     // Modules has to match ${project.group}:${project.name} to make composite build work
     const val compilerPluginId = "plugin-compiler"
@@ -74,6 +74,7 @@ object Realm {
     const val cInteropId = "cinterop"
     const val jniSwigStubsId = "jni-swig-stub"
     const val gradlePluginId = "gradle-plugin"
+    const val libraryBaseId = "library-base"
 
     object License {
         const val name = "The Apache License, Version 2.0"
@@ -82,12 +83,12 @@ object Realm {
     }
     object IssueManagement {
         const val system = "Github"
-        const val url = "https://github.com/realm/realm-kotlin/issues"
+        const val url = "https://github.com/Simprints/realm-kotlin/issues"
     }
     object SCM {
-        const val connection = "scm:git:git://github.com/realm/realm-kotlin.git"
-        const val developerConnection = "scm:git:ssh://github.com/realm/realm-kotlin.git"
-        const val url = "https://github.com/realm/realm-kotlin"
+        const val connection = "scm:git:git://github.com/Simprints/realm-kotlin.git"
+        const val developerConnection = "scm:git:ssh://github.com/Simprints/realm-kotlin.git"
+        const val url = "https://github.com/Simprints/realm-kotlin"
     }
     object Developer {
         const val name = "Realm"

@@ -1,14 +1,15 @@
 name: PR Build
 on:
   workflow_dispatch:  # Add this line to enable manual triggering
-  pull_request:
-    paths-ignore:
-    - '**.md'
-  push:
-    branches:
-      - main
-      - releases
-      - community
+#  Uncomment the following lines to enable on push and PR events
+#  pull_request:
+#    paths-ignore:
+#    - '**.md'
+#  push:
+#    branches:
+#      - main
+#      - releases
+#      - community
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
