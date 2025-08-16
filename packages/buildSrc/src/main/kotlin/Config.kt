@@ -65,9 +65,9 @@ object Realm {
     const val version = "4.0.0"
     // The version of the native realm binaries to avoid rebuilding them
     const val nativeRealmVersion = "3.0.0"
-    const val group = "com.simprints.realm-kotlin"
+    const val group = "com.simprints.realm.kotlin"
     const val projectUrl = "https://realm.io"
-    const val pluginPortalId = "com.simprints.realm-kotlin"
+    const val pluginPortalId = "com.simprints.realm.kotlin"
     // Modules has to match ${project.group}:${project.name} to make composite build work
     const val compilerPluginId = "plugin-compiler"
     const val compilerPluginIdNative = "plugin-compiler-shaded"

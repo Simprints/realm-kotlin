@@ -42,7 +42,7 @@ repositories {
 }
 
 dependencies {
-    implementation("com.simprints:realm:<forked-version>")
+    implementation("com.simprints.realm-kotlin:<forked-version>")
 }
 ```
 
@@ -51,5 +51,3 @@ dependencies {
 For original documentation, please see [README\_LEGACY.md](./README_LEGACY.md).
 
 ---
-
-Would you like me to also add a **"Why this fork exists"** section at the top (summarizing that the official Realm 3.0.0 doesn’t support Kotlin 2.x and that this fork unblocks modern Kotlin projects)? It could make it clearer for external developers browsing Maven.
