@@ -21,7 +21,6 @@ plugins {
     id("realm-lint")
     `java-gradle-plugin`
     id("realm-publisher")
-    id("org.jetbrains.dokka") version Versions.dokka
 }
 
 allprojects {
@@ -57,11 +56,7 @@ tasks.register("publishCIPackages") {
 
     // Figure out which targets are configured. This will impact which sub modules will be published
     val availableTargets = setOf(
-        "iosArm64",
-        "iosX64",
         "jvm",
-        "macosX64",
-        "macosArm64",
         "android",
         "metadata",
         "compilerPlugin",
@@ -96,49 +91,20 @@ tasks.register("publishCIPackages") {
 
     publicationTargets.forEach { target: String ->
         when(target) {
-            "iosArm64" -> {
-                dependsOn(
-                    ":cinterop:publishIosArm64PublicationToTestRepository",
-                    ":cinterop:publishIosSimulatorArm64PublicationToTestRepository",
-                    ":library-base:publishIosArm64PublicationToTestRepository",
-                    ":library-base:publishIosSimulatorArm64PublicationToTestRepository",
-                )
-            }
-            "iosX64" -> {
-                dependsOn(
-                    ":cinterop:publishIosX64PublicationToTestRepository",
-                    ":library-base:publishIosX64PublicationToTestRepository",
-                )
-            }
+
             "jvm" -> {
                 dependsOn(
-                    ":jni-swig-stub:publishAllPublicationsToTestRepository",
-                    ":cinterop:publishJvmPublicationToTestRepository",
                     ":library-base:publishJvmPublicationToTestRepository",
                 )
             }
-            "macosX64" -> {
-                dependsOn(
-                    ":cinterop:publishMacosX64PublicationToTestRepository",
-                    ":library-base:publishMacosX64PublicationToTestRepository",
-                )
-            }
-            "macosArm64" -> {
-                dependsOn(
-                    ":cinterop:publishMacosArm64PublicationToTestRepository",
-                    ":library-base:publishMacosArm64PublicationToTestRepository",
-                )
-            }
+
             "android" -> {
                 dependsOn(
-                    ":jni-swig-stub:publishAllPublicationsToTestRepository",
-                    ":cinterop:publishAndroidReleasePublicationToTestRepository",
                     ":library-base:publishAndroidReleasePublicationToTestRepository",
                 )
             }
             "metadata" -> {
                 dependsOn(
-                    ":cinterop:publishKotlinMultiplatformPublicationToTestRepository",
                     ":library-base:publishKotlinMultiplatformPublicationToTestRepository",
                 )
             }
@@ -153,42 +119,6 @@ tasks.register("publishCIPackages") {
             }
             else -> {
                 throw IllegalArgumentException("Unsupported target: $target")
-            }
-        }
-    }
-}
-
-tasks.register("uploadDokka") {
-    dependsOn("dokkaHtmlMultiModule")
-    group = "Release"
-    description = "Upload SDK docs to S3"
-    doLast {
-        val awsAccessKey = getPropertyValue(this.project, "SDK_DOCS_AWS_ACCESS_KEY")
-        val awsSecretKey = getPropertyValue(this.project, "SDK_DOCS_AWS_SECRET_KEY")
-
-        // Failsafe check, ensuring that we catch if the path ever changes, which it might since it is an
-        // implementation detail of the Kotlin Gradle Plugin
-        val dokkaDir = File("$rootDir/build/dokka/htmlMultiModule/")
-        if (!dokkaDir.exists() || !dokkaDir.isDirectory || dokkaDir.listFiles().isEmpty()) {
-            throw GradleException("Could not locate dir with dokka files in: ${dokkaDir.path}")
-        }
-
-        // Upload two copies, to 'latest' and a versioned folder for posterity.
-        // Symlinks would have been safer and faster, but this is not supported by S3.
-        listOf(Realm.version, "latest").forEach { version: String ->
-            exec {
-                commandLine = listOf(
-                    "s3cmd",
-                    "put",
-                    "--no-mime-magic",
-                    "--guess-mime-type",
-                    "--recursive",
-                    "--acl-public",
-                    "--access_key=$awsAccessKey",
-                    "--secret_key=$awsSecretKey",
-                    "${dokkaDir.absolutePath}/", // Add / to only upload content of the folder, not the folder itself.
-                    "s3://realm-sdks/docs/realm-sdks/kotlin/$version/"
-                )
             }
         }
     }

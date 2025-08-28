@@ -40,7 +40,7 @@ dependencies {
     testImplementation("org.jetbrains.kotlin:kotlin-reflect:${Versions.kotlin}")
     testImplementation("dev.zacsweers.kctfork:core:${Versions.kotlinCompileTesting}")
     // Have to be mentioned explicitly as it is not an api dependency of library
-    implementation(project(":cinterop"))
+    implementation("io.realm.kotlin:cinterop:${Realm.nativeRealmVersion}")
     testImplementation(project(":library-base"))
 }
 

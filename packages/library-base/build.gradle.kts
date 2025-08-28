@@ -22,16 +22,10 @@ plugins {
     id("org.jetbrains.kotlin.multiplatform")
     id("com.android.library")
     id("realm-publisher")
-    id("org.jetbrains.dokka")
     kotlin("plugin.serialization") version Versions.kotlin
+    id("org.jetbrains.kotlinx.atomicfu") version Versions.atomicfuPlugin
 }
 
-buildscript {
-    dependencies {
-        classpath("org.jetbrains.kotlinx:atomicfu-gradle-plugin:${Versions.atomicfu}")
-    }
-}
-apply(plugin = "kotlinx-atomicfu")
 // AtomicFu cannot transform JVM code. Maybe an issue with using IR backend. Throws
 // ClassCastException: org.objectweb.asm.tree.InsnList cannot be cast to java.lang.Iterable
 project.extensions.configure(kotlinx.atomicfu.plugin.gradle.AtomicFUPluginExtension::class) {
@@ -47,11 +41,6 @@ kotlin {
         // in /packages/build.gradle.kts
         publishLibraryVariants("release")
     }
-    iosX64()
-    iosSimulatorArm64()
-    iosArm64()
-    macosX64()
-    macosArm64()
 
     sourceSets {
         val commonMain by getting {
@@ -64,10 +53,10 @@ kotlin {
 
                 // NOTE: scope needs to be API since 'implementation' will produce a POM with 'runtime' scope
                 //       causing the compiler plugin to fail to lookup classes from the 'cinterop' package
-                api(project(":cinterop"))
+                api("io.realm.kotlin:cinterop:${Realm.nativeRealmVersion}")
                 implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:${Versions.coroutines}")
-                implementation("org.jetbrains.kotlinx:atomicfu:${Versions.atomicfu}")
-                implementation("org.jetbrains.kotlinx:kotlinx-serialization-core:${Versions.serialization}")
+                implementation("org.jetbrains.kotlinx:atomicfu:${Versions.atomicfuPlugin}")
+                implementation("org.jetbrains.kotlinx:kotlinx-serialization-core:${Versions.serializationJson}")
             }
         }
 
@@ -88,30 +77,6 @@ kotlin {
             dependencies {
                 implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:${Versions.coroutines}")
             }
-        }
-        val nativeDarwin by creating {
-            dependsOn(commonMain)
-        }
-        val nativeMacos by creating {
-            dependsOn(nativeDarwin)
-        }
-        val nativeIos by creating {
-            dependsOn(nativeDarwin)
-        }
-        val macosX64Main by getting {
-            dependsOn(nativeMacos)
-        }
-        val macosArm64Main by getting {
-            dependsOn(nativeMacos)
-        }
-        val iosArm64Main by getting {
-            dependsOn(nativeIos)
-        }
-        val iosSimulatorArm64Main by getting {
-            dependsOn(nativeIos)
-        }
-        val iosX64Main by getting {
-            dependsOn(nativeIos)
         }
     }
 
@@ -144,7 +109,6 @@ tasks.withType<KotlinNativeCompile>().configureEach {
 android {
     namespace = "io.realm.kotlin"
     compileSdk = Versions.Android.compileSdkVersion
-    buildToolsVersion = Versions.Android.buildToolsVersion
 
     defaultConfig {
         minSdk = Versions.Android.minSdk
@@ -157,19 +121,9 @@ android {
                 jniLibs.srcDir("src/androidMain/jniLibs")
             }
         }
-        ndk {
-            abiFilters += setOf("x86_64", "arm64-v8a")
-        }
     }
 
-    buildTypes {
-        getByName("debug") {
-            consumerProguardFiles("proguard-rules-consumer-common.pro")
-        }
-        getByName("release") {
-            consumerProguardFiles("proguard-rules-consumer-common.pro")
-        }
-    }
+
     compileOptions {
         sourceCompatibility = Versions.sourceCompatibilityVersion
         targetCompatibility = Versions.targetCompatibilityVersion
@@ -193,60 +147,4 @@ realmPublish {
             "supposed to be consumed directly, but through " +
             "'io.realm.kotlin:gradle-plugin:${Realm.version}' instead."
     }
-}
-
-tasks.withType<org.jetbrains.dokka.gradle.DokkaTaskPartial>().configureEach {
-    moduleName.set("Realm Kotlin SDK")
-    moduleVersion.set(Realm.version)
-    dokkaSourceSets {
-        configureEach {
-            moduleVersion.set(Realm.version)
-            reportUndocumented.set(true)
-            skipEmptyPackages.set(true)
-            perPackageOption {
-                matchingRegex.set(""".*\.internal.*""")
-                suppress.set(true)
-            }
-            jdkVersion.set(8)
-        }
-        @Suppress("UNUSED_VARIABLE")
-        val commonMain by getting {
-            includes.from(
-                "overview.md",
-                // TODO We could actually include package descriptions in top level overview file
-                //  with:
-                //    # package io.realm.kotlin
-                //  Maybe worth a consideration
-                "src/commonMain/kotlin/io/realm/kotlin/info.md",
-                "src/commonMain/kotlin/io/realm/kotlin/log/info.md"
-            )
-            sourceRoot("../runtime-api/src/commonMain/kotlin")
-        }
-    }
-}
-
-tasks.register("dokkaJar", Jar::class) {
-    val dokkaTask = "dokkaHtmlPartial"
-    dependsOn(dokkaTask)
-    archiveClassifier.set("dokka")
-    from(tasks.named(dokkaTask).get().outputs)
-}
-
-val javadocJar by tasks.registering(Jar::class) {
-    archiveClassifier.set("javadoc")
-}
-
-// Make sure that docs are published for the Metadata publication as well. This is required
-// by Maven Central
-publishing {
-    // See https://dev.to/kotlin/how-to-build-and-publish-a-kotlin-multiplatform-library-going-public-4a8k
-    publications.withType<MavenPublication> {
-        // Stub javadoc.jar artifact
-        artifact(javadocJar.get())
-    }
-
-    val common = publications.getByName("kotlinMultiplatform") as MavenPublication
-    // Configuration through examples/kmm-sample does not work if we do not resolve the tasks
-    // completely, hence the .get() below.
-    common.artifact(tasks.named("dokkaJar").get())
 }
