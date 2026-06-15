@@ -62,7 +62,7 @@ val HOST_OS: OperatingSystem = findHostOs()
 
 object Realm {
     val ciBuild = (System.getenv("CI") != null)
-    const val version = "4.0.3"
+    const val version = "4.0.4"
     // The version of the native realm binaries to avoid rebuilding them
     const val nativeRealmVersion = "3.0.0"
     const val group = "com.simprints.realm.kotlin"
@@ -119,7 +119,7 @@ object Versions {
     const val junit = "4.13.2" // https://mvnrepository.com/artifact/junit/junit
     const val kbson = "0.4.0" // https://github.com/mongodb/kbson
     // When updating the Kotlin version, also remember to update /examples/min-android-sample/build.gradle.kts
-    const val kotlin = "2.3.20" // https://github.com/JetBrains/kotlin and https://kotlinlang.org/docs/releases.html#release-details
+    const val kotlin = "2.4.0" // https://github.com/JetBrains/kotlin and https://kotlinlang.org/docs/releases.html#release-details
     const val kotlinJvmTarget = "17" // Which JVM bytecode version is kotlin compiled to.
     const val kotlinCompileTesting = "0.8.0" // https://github.com/zacsweers/kotlin-compile-testing
     const val ktlint = "0.45.2" // https://github.com/pinterest/ktlint
