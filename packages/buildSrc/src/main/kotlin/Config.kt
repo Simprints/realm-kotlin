@@ -62,7 +62,7 @@ val HOST_OS: OperatingSystem = findHostOs()
 
 object Realm {
     val ciBuild = (System.getenv("CI") != null)
-    const val version = "4.0.1"
+    const val version = "4.0.4"
     // The version of the native realm binaries to avoid rebuilding them
     const val nativeRealmVersion = "3.0.0"
     const val group = "com.simprints.realm.kotlin"
@@ -103,7 +103,7 @@ object Versions {
         const val minSdk = 23
         const val targetSdk = 35
         const val compileSdkVersion = 35
-        const val buildTools = "8.12.0" // https://maven.google.com/web/index.html?q=gradle#com.android.tools.build:gradle
+        const val buildTools = "8.13.2" // https://maven.google.com/web/index.html?q=gradle#com.android.tools.build:gradle
 
     }
     const val androidxJunit = "1.3.0" // https://maven.google.com/web/index.html#androidx.test.ext:junit
@@ -115,18 +115,18 @@ object Versions {
     const val datetime = "0.4.0" // https://github.com/Kotlin/kotlinx-datetime
     const val detektPlugin = "1.23.6" // https://github.com/detekt/detekt
     const val dokka = "1.9.0" // https://github.com/Kotlin/dokka
-    const val gradlePluginPublishPlugin = "0.15.0" // https://plugins.gradle.org/plugin/com.gradle.plugin-publish
+    const val gradlePluginPublishPlugin = "2.0.0" // https://plugins.gradle.org/plugin/com.gradle.plugin-publish
     const val junit = "4.13.2" // https://mvnrepository.com/artifact/junit/junit
     const val kbson = "0.4.0" // https://github.com/mongodb/kbson
     // When updating the Kotlin version, also remember to update /examples/min-android-sample/build.gradle.kts
-    const val kotlin = "2.2.21" // https://github.com/JetBrains/kotlin and https://kotlinlang.org/docs/releases.html#release-details
+    const val kotlin = "2.4.0" // https://github.com/JetBrains/kotlin and https://kotlinlang.org/docs/releases.html#release-details
     const val kotlinJvmTarget = "17" // Which JVM bytecode version is kotlin compiled to.
     const val kotlinCompileTesting = "0.8.0" // https://github.com/zacsweers/kotlin-compile-testing
     const val ktlint = "0.45.2" // https://github.com/pinterest/ktlint
     const val nexusPublishPlugin = "1.3.0" // https://github.com/gradle-nexus/publish-plugin
     const val okio = "3.16.0" // https://square.github.io/okio/#releases
     const val serializationJson = "1.9.0" // https://kotlinlang.org/docs/releases.html#release-details
-    const val shadowJar =  "8.1.1" // https://mvnrepository.com/artifact/com.github.johnrengelman.shadow/com.github.johnrengelman.shadow.gradle.plugin?repo=gradle-plugins
+    const val shadowJar =  "9.3.0" // https://mvnrepository.com/artifact/com.github.johnrengelman.shadow/com.github.johnrengelman.shadow.gradle.plugin?repo=gradle-plugins
     val sourceCompatibilityVersion = JavaVersion.VERSION_17 // Language level of any Java source code.
     val targetCompatibilityVersion = JavaVersion.VERSION_17 // Version of generated JVM bytecode from Java files.
 }

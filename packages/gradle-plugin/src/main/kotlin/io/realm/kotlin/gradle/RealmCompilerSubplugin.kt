@@ -49,10 +49,6 @@ class RealmCompilerSubplugin : KotlinCompilerPluginSupportPlugin {
         return SubpluginArtifact(groupId, artifactId, version)
     }
 
-    override fun getPluginArtifactForNative(): SubpluginArtifact {
-        return SubpluginArtifact(groupId, artifactId, version)
-    }
-
     override fun applyToCompilation(kotlinCompilation: KotlinCompilation<*>): Provider<List<SubpluginOption>> {
         val project = kotlinCompilation.target.project
 

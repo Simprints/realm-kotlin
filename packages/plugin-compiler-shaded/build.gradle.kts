@@ -18,7 +18,7 @@ import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 
 plugins {
     `java`
-    id("com.github.johnrengelman.shadow") version Versions.shadowJar
+    id("com.gradleup.shadow") version Versions.shadowJar
     id("com.vanniktech.maven.publish")
 }
 

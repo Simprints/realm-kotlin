@@ -30,8 +30,8 @@ import org.jetbrains.kotlin.ir.UNDEFINED_OFFSET
 import org.jetbrains.kotlin.ir.declarations.IrClass
 import org.jetbrains.kotlin.ir.declarations.IrFile
 import org.jetbrains.kotlin.ir.declarations.IrModuleFragment
+import org.jetbrains.kotlin.ir.expressions.impl.IrAnnotationImpl
 import org.jetbrains.kotlin.ir.expressions.impl.IrClassReferenceImpl
-import org.jetbrains.kotlin.ir.expressions.impl.IrConstructorCallImpl
 import org.jetbrains.kotlin.ir.expressions.impl.fromSymbolOwner
 import org.jetbrains.kotlin.ir.symbols.IrClassSymbol
 import org.jetbrains.kotlin.ir.symbols.IrConstructorSymbol
@@ -124,7 +124,7 @@ private class RealmModelLowering(private val pluginContext: IrPluginContext) : C
                 val type = modelObjectAnnotationClass.defaultType as? IrType ?: throw IllegalStateException("defaultType is not an IrType")
                 val primaryConstructor = modelObjectAnnotationClass.primaryConstructor ?: throw IllegalStateException("primaryConstructor is null")
                 val constructorSymbol = primaryConstructor.symbol as? IrConstructorSymbol ?: throw IllegalStateException("symbol is not an IrConstructorSymbol")
-                val modelObjectAnnotation = IrConstructorCallImpl.fromSymbolOwner(
+                val modelObjectAnnotation = IrAnnotationImpl.fromSymbolOwner(
                     startOffset = UNDEFINED_OFFSET,
                     endOffset = UNDEFINED_OFFSET,
                     type = type,
