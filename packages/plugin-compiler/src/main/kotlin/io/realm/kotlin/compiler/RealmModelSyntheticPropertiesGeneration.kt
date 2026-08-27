@@ -39,6 +39,7 @@ import io.realm.kotlin.compiler.ClassIds.REALM_OBJECT_INTERFACE
 import io.realm.kotlin.compiler.ClassIds.REALM_OBJECT_INTERNAL_INTERFACE
 import io.realm.kotlin.compiler.ClassIds.REALM_UUID
 import io.realm.kotlin.compiler.ClassIds.TYPED_REALM_OBJECT_INTERFACE
+import io.realm.kotlin.compiler.ClassIds.KOTLINX_SERIALIZATION_TRANSIENT_ANNOTATION
 import io.realm.kotlin.compiler.Names.CLASS_INFO_CREATE
 import io.realm.kotlin.compiler.Names.OBJECT_REFERENCE
 import io.realm.kotlin.compiler.Names.PROPERTY_COLLECTION_TYPE_DICTIONARY
@@ -86,6 +87,7 @@ import org.jetbrains.kotlin.ir.declarations.IrSimpleFunction
 import org.jetbrains.kotlin.ir.expressions.IrConst
 import org.jetbrains.kotlin.ir.expressions.IrExpression
 import org.jetbrains.kotlin.ir.expressions.IrExpressionBody
+import org.jetbrains.kotlin.ir.expressions.impl.IrAnnotationImpl
 import org.jetbrains.kotlin.ir.expressions.impl.IrCallImpl
 import org.jetbrains.kotlin.ir.expressions.impl.IrClassReferenceImpl
 import org.jetbrains.kotlin.ir.expressions.impl.IrConstImpl
@@ -157,6 +159,9 @@ class RealmModelSyntheticPropertiesGeneration(private val pluginContext: IrPlugi
     private val objectIdType: IrType = pluginContext.lookupClassOrThrow(KBSON_OBJECT_ID).defaultType
     private val realmUUIDType: IrType = pluginContext.lookupClassOrThrow(REALM_UUID).defaultType
     private val realmAnyType: IrType = pluginContext.lookupClassOrThrow(REALM_ANY).defaultType
+    // Nullable: only present when kotlinx.serialization is on the classpath
+    private val serializationTransientClass: IrClass? =
+        pluginContext.referenceClass(KOTLINX_SERIALIZATION_TRANSIENT_ANNOTATION)?.owner
 
     private val kMutableProperty1Class: IrClass =
         pluginContext.lookupClassOrThrow(ClassIds.KOTLIN_REFLECT_KMUTABLEPROPERTY1)
@@ -240,12 +245,28 @@ class RealmModelSyntheticPropertiesGeneration(private val pluginContext: IrPlugi
         // RealmObjectReference<T> should use the model class name as the generic argument.
         val type: IrType = objectReferenceClass.typeWith(irClass.defaultType).makeNullable()
         return irClass.apply {
-            addInternalVarProperty(
+            val property = addInternalVarProperty(
                 realmModelInternalInterface,
                 OBJECT_REFERENCE,
                 type,
                 ::irNull
             )
+            // If kotlinx.serialization is on the classpath, mark the injected property as
+            // @kotlinx.serialization.Transient so the serialization plugin does not attempt
+            // to generate a serializer for RealmObjectReference, which has none.
+            serializationTransientClass?.let { transientClass ->
+                val annotationCtor = transientClass.constructors.first()
+                val annotation = IrAnnotationImpl.fromSymbolOwner(
+                    UNDEFINED_OFFSET,
+                    UNDEFINED_OFFSET,
+                    transientClass.defaultType,
+                    annotationCtor.symbol
+                )
+                property.annotations = property.annotations + annotation
+                property.backingField?.let { field ->
+                    field.annotations = field.annotations + annotation
+                }
+            }
         }
     }
 
@@ -751,7 +772,7 @@ class RealmModelSyntheticPropertiesGeneration(private val pluginContext: IrPlugi
             propertyName: Name,
             propertyType: IrType,
             initExpression: (startOffset: Int, endOffset: Int) -> IrExpressionBody
-    ) {
+    ): IrProperty {
         // PROPERTY name:realmPointer visibility:public modality:OPEN [var]
         // Also add @kotlin.
         val property = addProperty {
@@ -848,6 +869,7 @@ class RealmModelSyntheticPropertiesGeneration(private val pluginContext: IrPlugi
                 irGet(valueParameter),
             )
         }
+        return property
     }
 
     private fun irNull(startOffset: Int, endOffset: Int): IrExpressionBody =
